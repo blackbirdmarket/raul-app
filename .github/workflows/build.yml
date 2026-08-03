@@ -9,11 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  APP_NAME: Ruli OS
-  PROJECT_NAME: ruli_os
-  ORG: cl.raulisaac
-
 jobs:
   build:
     name: Generar APK de release
@@ -38,9 +33,9 @@ jobs:
           java-version: '17'
 
       # Fijada a la misma version que tiene Raul instalada. Si la fabrica usara
-      # una version mas nueva, la carpeta android/ que genera podria pedirle a
-      # su maquina cosas que su Flutter no entiende, y tendriamos errores que
-      # solo aparecen en su computador.
+      # una version mas nueva, la carpeta android/ podria pedirle a su maquina
+      # cosas que su Flutter no entiende, y tendriamos errores que solo
+      # aparecen en su computador.
       - name: Instalar Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -51,23 +46,19 @@ jobs:
       - name: Version de Flutter instalada
         run: flutter --version
 
-      # Se genera en una carpeta aparte y solo se copian las plataformas, para
-      # no arriesgar que flutter create toque lib/ ni pubspec.yaml.
-      - name: Generar las carpetas de plataforma
+      # android/ y web/ vienen dentro del proyecto y ya no se generan aqui.
+      # Antes se creaban con `flutter create` en cada compilacion, lo que
+      # borraba los permisos de alarma y la configuracion de Gradle que
+      # necesitan las notificaciones.
+      - name: Comprobar que las plataformas vienen en el proyecto
         run: |
-          flutter create --platforms=android,web \
-            --org "$ORG" --project-name "$PROJECT_NAME" /tmp/scaffold
-          cp -r /tmp/scaffold/android ./android
-          cp -r /tmp/scaffold/web ./web
-
-      # flutter create deja el nombre tecnico como etiqueta. Bajo el icono
-      # tiene que leerse el nombre de verdad.
-      - name: Poner el nombre visible de la app
-        run: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
-          sed -i "s/android:label=\"[^\"]*\"/android:label=\"$APP_NAME\"/" "$MANIFEST"
-          grep -n 'android:label' "$MANIFEST"
-          sed -i "s#<title>[^<]*</title>#<title>$APP_NAME</title>#" web/index.html
+          test -f android/app/build.gradle.kts || { echo "Falta android/"; exit 1; }
+          test -f web/index.html || { echo "Falta web/"; exit 1; }
+          grep -q 'isCoreLibraryDesugaringEnabled' android/app/build.gradle.kts \
+            || { echo "Falta el desugaring que necesitan las alarmas"; exit 1; }
+          grep -q 'POST_NOTIFICATIONS' android/app/src/main/AndroidManifest.xml \
+            || { echo "Faltan los permisos de aviso"; exit 1; }
+          echo "Plataformas y permisos en orden."
 
       - name: Descargar dependencias
         run: flutter pub get
@@ -100,7 +91,6 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # Version web, solo para revisar diseno rapido sin instalar nada.
       - name: Compilar la version web
         run: flutter build web --release
 
