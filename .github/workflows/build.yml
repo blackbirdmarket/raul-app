@@ -37,9 +37,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Fijada a la misma version que tiene Raul instalada. Si la fabrica usara
+      # una version mas nueva, la carpeta android/ que genera podria pedirle a
+      # su maquina cosas que su Flutter no entiende, y tendriamos errores que
+      # solo aparecen en su computador.
       - name: Instalar Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.32.2
           channel: stable
           cache: true
 
@@ -70,6 +75,30 @@ jobs:
       - name: Revisar el codigo
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
         continue-on-error: true
+
+      # Proyecto completo para abrir en Android Studio y trabajar con recarga
+      # instantanea. Se empaqueta antes de compilar para que no arrastre los
+      # cientos de megas de build/, y sin local.properties porque ese archivo
+      # apunta a rutas del runner y cada maquina genera el suyo.
+      - name: Empaquetar el proyecto para Android Studio
+        run: |
+          rm -f android/local.properties
+          mkdir -p /tmp/pack/ruli_os
+          rsync -a \
+            --exclude 'build/' \
+            --exclude '.dart_tool/' \
+            --exclude '.gradle/' \
+            --exclude 'raul_app.zip' \
+            ./ /tmp/pack/ruli_os/
+          du -sh /tmp/pack/ruli_os
+
+      - name: Publicar el proyecto para Android Studio
+        uses: actions/upload-artifact@v4
+        with:
+          name: proyecto-android-studio
+          path: /tmp/pack
+          if-no-files-found: error
+          retention-days: 30
 
       # Version web, solo para revisar diseno rapido sin instalar nada.
       - name: Compilar la version web
