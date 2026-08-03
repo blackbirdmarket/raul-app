@@ -63,9 +63,11 @@ jobs:
       - name: Descargar dependencias
         run: flutter pub get
 
+      # Sin `continue-on-error`: este paso tarda 15 segundos y encuentra los
+      # mismos errores de codigo que el compilador encuentra en tres minutos.
+      # Los avisos menores no detienen nada; los errores de verdad, si.
       - name: Revisar el codigo
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
-        continue-on-error: true
 
       # Proyecto completo para abrir en Android Studio y trabajar con recarga
       # instantanea. Se empaqueta antes de compilar para que no arrastre los
