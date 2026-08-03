@@ -46,13 +46,14 @@ jobs:
       - name: Version de Flutter instalada
         run: flutter --version
 
-      # Se genera en una carpeta aparte y solo se copia android/, para no
-      # arriesgar que flutter create toque lib/ ni pubspec.yaml.
-      - name: Generar la carpeta android
+      # Se genera en una carpeta aparte y solo se copian las plataformas, para
+      # no arriesgar que flutter create toque lib/ ni pubspec.yaml.
+      - name: Generar las carpetas de plataforma
         run: |
-          flutter create --platforms=android \
+          flutter create --platforms=android,web \
             --org "$ORG" --project-name "$PROJECT_NAME" /tmp/scaffold
           cp -r /tmp/scaffold/android ./android
+          cp -r /tmp/scaffold/web ./web
 
       # flutter create deja el nombre tecnico como etiqueta. Bajo el icono
       # tiene que leerse el nombre de verdad.
@@ -61,6 +62,7 @@ jobs:
           MANIFEST=android/app/src/main/AndroidManifest.xml
           sed -i "s/android:label=\"[^\"]*\"/android:label=\"$APP_NAME\"/" "$MANIFEST"
           grep -n 'android:label' "$MANIFEST"
+          sed -i "s#<title>[^<]*</title>#<title>$APP_NAME</title>#" web/index.html
 
       - name: Descargar dependencias
         run: flutter pub get
@@ -68,6 +70,18 @@ jobs:
       - name: Revisar el codigo
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
         continue-on-error: true
+
+      # Version web, solo para revisar diseno rapido sin instalar nada.
+      - name: Compilar la version web
+        run: flutter build web --release
+
+      - name: Publicar la version web
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-preview
+          path: build/web
+          if-no-files-found: error
+          retention-days: 30
 
       # Un APK por arquitectura en vez de uno universal: cada uno pesa un
       # tercio y el telefono solo necesita el suyo.
