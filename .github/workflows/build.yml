@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+env:
+  APP_NAME: Ruli OS
+  PROJECT_NAME: ruli_os
+  ORG: cl.raulisaac
+
 jobs:
   build:
     name: Generar APK de release
@@ -42,11 +47,20 @@ jobs:
         run: flutter --version
 
       # Se genera en una carpeta aparte y solo se copia android/, para no
-      # arriesgar que flutter create toque lib/ o pubspec.yaml.
+      # arriesgar que flutter create toque lib/ ni pubspec.yaml.
       - name: Generar la carpeta android
         run: |
-          flutter create --platforms=android --org cl.raulisaac --project-name raul_app /tmp/scaffold
+          flutter create --platforms=android \
+            --org "$ORG" --project-name "$PROJECT_NAME" /tmp/scaffold
           cp -r /tmp/scaffold/android ./android
+
+      # flutter create deja el nombre tecnico como etiqueta. Bajo el icono
+      # tiene que leerse el nombre de verdad.
+      - name: Poner el nombre visible de la app
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          sed -i "s/android:label=\"[^\"]*\"/android:label=\"$APP_NAME\"/" "$MANIFEST"
+          grep -n 'android:label' "$MANIFEST"
 
       - name: Descargar dependencias
         run: flutter pub get
@@ -55,9 +69,8 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
         continue-on-error: true
 
-      # Un APK por arquitectura en vez de uno universal: cada uno pesa un tercio
-      # y el telefono solo necesita el suyo. El universal de 47 MB no pasaba por
-      # los limites de envio.
+      # Un APK por arquitectura en vez de uno universal: cada uno pesa un
+      # tercio y el telefono solo necesita el suyo.
       - name: Compilar los APK
         run: flutter build apk --release --split-per-abi
 
