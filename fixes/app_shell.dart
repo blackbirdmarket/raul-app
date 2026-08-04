@@ -5,10 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../features/planning/presentation/providers/agenda_providers.dart';
 import '../features/planning/presentation/widgets/entry_editor_sheet.dart';
 
-/// Estructura persistente que envuelve las areas del sistema.
-///
-/// El FAB de agregar vive aqui para flotar sobre la barra Aurora, justo en
-/// la zona de alcance natural del pulgar derecho. Solo aparece en Planning.
 class AppShell extends ConsumerWidget {
   const AppShell({required this.navigationShell, super.key});
 

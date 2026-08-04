@@ -8,11 +8,6 @@ import '../widgets/agenda_view.dart';
 import '../widgets/day_view.dart';
 import '../widgets/entry_editor_sheet.dart';
 
-/// Area de planificacion.
-///
-/// El FAB de agregar se movio a AppShell para que flote sobre la barra Aurora.
-/// El pill selector de vista se elimino: ahora el icono de calendario en el
-/// header abre un bottom sheet con todas las vistas disponibles.
 class PlanningPage extends ConsumerWidget {
   const PlanningPage({super.key});
 
@@ -42,7 +37,6 @@ class PlanningPage extends ConsumerWidget {
   }
 }
 
-/// Header del area: etiqueta + vista activa + icono selector de vista.
 class _AreaBar extends ConsumerWidget {
   const _AreaBar();
 
