@@ -11,18 +11,8 @@ import '../../../../utils/date_format.dart';
 import '../../../../utils/extensions.dart';
 import '../../../../widgets/check_circle.dart';
 import '../providers/agenda_providers.dart';
+import '../providers/now_provider.dart';
 
-/// Un bloque de tiempo con sus pasos dentro.
-///
-/// El alto viene impuesto por el riel: un bloque de dos horas ocupa el doble
-/// que uno de una. Por eso los pasos se muestran solo si sobra espacio, y el
-/// contenido va recortado — un bloque corto se ve compacto en vez de
-/// desbordarse sobre el siguiente.
-///
-/// Los bloques normales van tenues: el color vive en el borde, el halo y la
-/// barra de avance. El que esta corriendo ahora mismo, en cambio, va pintado
-/// entero. Es la unica pieza a color completo de la pantalla, y por eso no hay
-/// que buscarla: el ojo va solo a ella y responde "en esto deberia estar".
 class TimeBlockCard extends ConsumerWidget {
   const TimeBlockCard({
     required this.block,
@@ -33,21 +23,10 @@ class TimeBlockCard extends ConsumerWidget {
   });
 
   final TimeBlock block;
-
-  /// Alto fijo cuando se dibuja dentro del riel. En una lista normal va null
-  /// y la tarjeta toma el alto que necesite.
   final double? height;
-
   final VoidCallback? onTap;
   final bool showSubtasks;
 
-  /// Los pasos, ocupando el espacio que sobre.
-  ///
-  /// `Flexible` solo es valido cuando el alto esta acotado. En el riel lo esta
-  /// (lo impone la duracion) y sirve para recortar lo que no quepa; en la
-  /// agenda el alto es libre y usar `Flexible` ahi rompe el layout con
-  /// restricciones infinitas. Esa distincion es justamente lo que dejaba la
-  /// agenda inutilizable.
   Widget _subtasksSlot(Color accent, bool live) {
     final content = Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -62,9 +41,8 @@ class TimeBlockCard extends ConsumerWidget {
     final accent = AppColors.blockAccent(block.colorIndex);
     final complete = block.isComplete;
 
-    final now = ref.watch(nowProvider);
-    // Un bloque terminado ya no esta "en curso" aunque el reloj siga dentro:
-    // pintarlo seria pedir atencion para algo que ya se resolvio.
+    // nowProvider es un StreamProvider: usamos .value con fallback a now()
+    final now = ref.watch(nowProvider).value ?? DateTime.now();
     final live =
         !complete && !now.isBefore(block.start) && now.isBefore(block.end);
 
@@ -185,7 +163,8 @@ class _Header extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: onFull.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.radiusFull),
                 ),
                 child: Text(
                   'AHORA',
@@ -238,8 +217,6 @@ class _Header extends StatelessWidget {
         ),
         if (block.subtasks.isNotEmpty) ...<Widget>[
           const SizedBox(height: 9),
-          // La barra dice el avance sin ocupar el espacio de un anillo, que en
-          // un bloque corto competia con el titulo.
           ClipRRect(
             borderRadius: BorderRadius.circular(AppConstants.radiusFull),
             child: TweenAnimationBuilder<double>(
@@ -264,10 +241,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Pasos del bloque, con su casilla.
-///
-/// Va sin scroll propio: si no caben todos, el recorte del contenedor los
-/// oculta y el bloque completo se abre con un toque.
 class _SubtaskList extends StatelessWidget {
   const _SubtaskList({
     required this.block,
@@ -318,7 +291,8 @@ class _SubtaskRow extends ConsumerWidget {
     final onFull = AppColors.onColor(accent);
 
     final strong = live ? onFull : scheme.onSurface;
-    final soft = live ? onFull.withValues(alpha: 0.6) : scheme.onSurfaceVariant;
+    final soft =
+        live ? onFull.withValues(alpha: 0.6) : scheme.onSurfaceVariant;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),

@@ -6,12 +6,9 @@ import '../../../../utils/calendar.dart';
 import '../../../../utils/date_format.dart';
 import '../../../../utils/extensions.dart';
 import '../providers/agenda_providers.dart';
+import '../providers/day_load_provider.dart';
 
 /// Tira horizontal con los siete dias de la semana.
-///
-/// Es el mando de navegacion principal: siempre visible, siempre en el mismo
-/// lugar. Cada dia muestra cuanta carga tiene, para que se note de un vistazo
-/// donde esta el dia apretado antes siquiera de abrirlo.
 class WeekStrip extends ConsumerWidget {
   const WeekStrip({super.key});
 
@@ -21,9 +18,6 @@ class WeekStrip extends ConsumerWidget {
     final monday = Calendar.startOfWeek(selected);
     final today = Calendar.today();
 
-    // Los siete dias se calculan una vez y se reutilizan: antes se construia
-    // la misma fecha tres veces por celda, con aritmetica de duracion que ya
-    // sabemos que se tuerce en los cambios de horario.
     final days = <DateTime>[
       for (var i = 0; i < 7; i++) Calendar.addDays(monday, i),
     ];
@@ -62,8 +56,6 @@ class _DayCell extends ConsumerWidget {
     final load = ref.watch(dayLoadProvider(date));
     final scheme = context.colors;
 
-    // El dia elegido se tine, no se rellena: sobre el fondo con luz un bloque
-    // ambar macizo apagaria todo lo que tiene alrededor.
     final Color background = isSelected
         ? scheme.primary.withValues(alpha: 0.18)
         : context.isDarkMode
@@ -76,9 +68,6 @@ class _DayCell extends ConsumerWidget {
             ? scheme.primary
             : scheme.onSurface;
 
-    // La celda entera es la pastilla, no solo el numero: da un area de toque
-    // mas generosa y deja que el dia elegido se lea como una pieza y no como
-    // un circulito suelto.
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => ref.read(selectedDayProvider.notifier).select(date),
@@ -133,7 +122,6 @@ class _DayCell extends ConsumerWidget {
   }
 }
 
-/// Punto bajo cada dia: vacio si no hay nada, relleno segun lo completado.
 class _LoadDot extends StatelessWidget {
   const _LoadDot({required this.load, required this.isSelected});
 
@@ -150,7 +138,9 @@ class _LoadDot extends StatelessWidget {
     final color = load.isComplete ? scheme.onSurfaceVariant : scheme.primary;
 
     return Container(
-      width: load.isComplete ? 5 : 5 + (load.total.clamp(1, 4) * 3).toDouble(),
+      width: load.isComplete
+          ? 5.0
+          : 5.0 + (load.total.clamp(1, 4) * 3).toDouble(),
       height: 5,
       decoration: BoxDecoration(
         color: isSelected ? scheme.primary : color,

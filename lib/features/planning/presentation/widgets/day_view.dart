@@ -5,6 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../utils/date_format.dart';
 import '../../../../utils/extensions.dart';
 import '../providers/agenda_providers.dart';
+import '../providers/day_load_provider.dart';
 import 'entry_detail_sheet.dart';
 import 'entry_editor_sheet.dart';
 import 'timeline_rail.dart';
@@ -37,13 +38,9 @@ class DayView extends ConsumerWidget {
                     right: AppConstants.spaceMd,
                   ),
                   child: TimelineRail(
-                    // La clave fuerza reconstruir el riel al cambiar de dia,
-                    // para que vuelva a posicionar el scroll.
                     key: ValueKey<DateTime>(day),
                     day: day,
                     entries: entries,
-                    // Tocar algo abre su ficha, no el editor: mirar es lo
-                    // que uno hace mil veces, editar es la excepcion.
                     onEntryTap: (entry) => showEntryDetail(
                       context,
                       day: day,
@@ -114,7 +111,7 @@ class _DayHeader extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      '  ·  ',
+                      '  \u00b7  ',
                       style: context.texts.bodyMedium?.copyWith(
                         color: scheme.outline,
                       ),
@@ -127,7 +124,8 @@ class _DayHeader extends ConsumerWidget {
                           color: load.isComplete
                               ? scheme.primary
                               : scheme.onSurfaceVariant,
-                          fontWeight: load.isComplete ? FontWeight.w600 : null,
+                          fontWeight:
+                              load.isComplete ? FontWeight.w600 : null,
                         ),
                       ),
                     ),
